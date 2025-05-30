@@ -16,6 +16,8 @@ public class HttpClient {
     public static APIResponse get(String url, Map<String, String> queryParams) throws IOException {
         if (Objects.nonNull(queryParams) && !queryParams.isEmpty()) {
             url = concatQueryParams(url, queryParams);
+
+            System.out.println("URL com query params: " + url);
         }
 
         final var connection = createConnection(url);
