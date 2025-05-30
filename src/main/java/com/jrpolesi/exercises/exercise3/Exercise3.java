@@ -1,6 +1,7 @@
 package com.jrpolesi.exercises.exercise3;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 
 import com.google.gson.Gson;
 import com.jrpolesi.http.HttpClient;
@@ -24,12 +25,12 @@ public class Exercise3 {
         final var statusCode = response.getStatusCode();
         System.out.println("Status code: " + statusCode);
 
-        if (statusCode == 404) {
+        if (statusCode == HttpURLConnection.HTTP_NOT_FOUND) {
             System.out.println("Entidade com o ID " + id + " não foi encontrada.");
             return;
         }
 
-        if (statusCode != 200) {
+        if (statusCode != HttpURLConnection.HTTP_OK) {
             System.err.println("Erro ao obter dados da API: " + statusCode);
             return;
         }

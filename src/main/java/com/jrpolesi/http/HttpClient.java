@@ -25,8 +25,8 @@ public class HttpClient {
         } catch (IOException e) {
             connection.disconnect();
 
-            if (connection.getResponseCode() == 404) {
-                return new APIResponse(404, "Not Found");
+            if (connection.getResponseCode() == HttpURLConnection.HTTP_NOT_FOUND) {
+                return new APIResponse(HttpURLConnection.HTTP_NOT_FOUND, "Not Found");
             }
 
             throw e;
