@@ -5,9 +5,19 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.util.Map;
+import java.util.Objects;
 
 public class HttpClient {
     public static APIResponse get(String url) throws IOException {
+        return get(url, null);
+    }
+
+    public static APIResponse get(String url, Map<String, String> queryParams) throws IOException {
+        if (Objects.nonNull(queryParams) && !queryParams.isEmpty()) {
+            url = concatQueryParams(url, queryParams);
+        }
+
         final var connection = createConnection(url);
 
         connection.setRequestMethod("GET");
@@ -56,5 +66,14 @@ public class HttpClient {
 
         in.close();
         return response.toString();
+    }
+
+    private static String concatQueryParams(String url, Map<String, String> queryParams) {
+        final var params = queryParams.entrySet().stream()
+                .map(entry -> entry.getKey() + "=" + entry.getValue())
+                .reduce((a, b) -> a + "&" + b)
+                .orElse("");
+
+        return url + "?" + params;
     }
 }
