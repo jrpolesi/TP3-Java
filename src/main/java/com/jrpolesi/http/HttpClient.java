@@ -13,24 +13,24 @@ public class HttpClient {
         connection.setRequestMethod("GET");
         connection.setRequestProperty("Accept", "application/json");
 
-        final var in = new BufferedReader(
-                new InputStreamReader(connection.getInputStream())
-        );
+        try {
+            final var response = readResponse(connection);
 
-        String inputLine;
-        final var response = new StringBuilder();
+            connection.disconnect();
 
-        while ((inputLine = in.readLine()) != null) {
-            response.append(inputLine);
+            return new APIResponse(
+                    connection.getResponseCode(),
+                    response
+            );
+        } catch (IOException e) {
+            connection.disconnect();
+
+            if (connection.getResponseCode() == 404) {
+                return new APIResponse(404, "Not Found");
+            }
+
+            throw e;
         }
-
-        in.close();
-        connection.disconnect();
-
-        return new APIResponse(
-                connection.getResponseCode(),
-                response.toString()
-        );
     }
 
     private static HttpURLConnection createConnection(String url) {
@@ -40,5 +40,21 @@ public class HttpClient {
         } catch (Exception e) {
             throw new RuntimeException("Erro ao criar conexão HTTP", e);
         }
+    }
+
+    private static String readResponse(HttpURLConnection connection) throws IOException {
+        final var in = new BufferedReader(
+                new InputStreamReader(connection.getInputStream())
+
+        );
+        final var response = new StringBuilder();
+
+        String inputLine;
+        while ((inputLine = in.readLine()) != null) {
+            response.append(inputLine);
+        }
+
+        in.close();
+        return response.toString();
     }
 }
