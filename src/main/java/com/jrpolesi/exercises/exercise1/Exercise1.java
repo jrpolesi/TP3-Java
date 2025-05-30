@@ -11,19 +11,25 @@ public class Exercise1 {
             final var response = HttpClient.get(url);
 
             final var statusCode = response.getStatusCode();
+            System.out.println("Status code: " + statusCode);
+
+            if (statusCode != 200) {
+                System.err.println("Erro ao obter dados da API: " + statusCode);
+                return;
+            }
+
             final var body = response.getBody();
 
             final var gson = new Gson();
             final var entitiesResponse = gson.fromJson(body, EntitiesResponse.class);
 
-            System.out.println("Status code: " + statusCode);
             System.out.println("Entities:");
 
             for (final var entity : entitiesResponse.entities) {
                 System.out.println("-> ID: " + entity.id + ", Name: " + entity.name + ", Description: " + entity.description);
             }
         } catch (Exception e) {
-            System.err.println("Erro ao chamar API: " + e.getMessage());
+            System.err.println("Erro ao executar exercise 1: " + e.getMessage());
             return;
         }
     }
