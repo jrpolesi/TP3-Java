@@ -1,8 +1,8 @@
-package com.jrpolesi.exercises.exercise7;
+package com.jrpolesi.exercises.exercise8;
 
 import com.jrpolesi.http.HttpClient;
 
-public class Exercise7 {
+public class Exercise8 {
     private static final String URL = "https://apichallenges.eviltester.com/sim/entities/";
 
     public static void execute() {
@@ -10,7 +10,7 @@ public class Exercise7 {
         final var myEntity = Entity.of("atualizado");
 
         try {
-            final var postResponse = HttpClient.post(URL + entityID, myEntity, Entity.class);
+            final var postResponse = HttpClient.put(URL + entityID, myEntity, Entity.class);
 
             final var statusCode = postResponse.getStatusCode();
             System.out.println("Status code: " + statusCode);
@@ -30,7 +30,7 @@ public class Exercise7 {
             System.out.println("Entity buscada:");
             System.out.println("-> ID: " + fetchedEntity.id + ", Name: " + fetchedEntity.name + ", Description: " + fetchedEntity.description);
         } catch (Exception e) {
-            System.err.println("Erro ao executar exercise 7: " + e.getMessage());
+            System.err.println("Erro ao executar exercise 8: " + e.getMessage());
         }
     }
 }

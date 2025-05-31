@@ -1,15 +1,38 @@
 package com.jrpolesi;
 
+import com.jrpolesi.exercises.exercise1.Exercise1;
+import com.jrpolesi.exercises.exercise2.Exercise2;
+import com.jrpolesi.exercises.exercise3.Exercise3;
+import com.jrpolesi.exercises.exercise4.Exercise4;
+import com.jrpolesi.exercises.exercise5.Exercise5;
+import com.jrpolesi.exercises.exercise6.Exercise6;
 import com.jrpolesi.exercises.exercise7.Exercise7;
+import com.jrpolesi.exercises.exercise8.Exercise8;
 
 public class Main {
     public static void main(String[] args) {
-//        Exercise1.execute();
-//        Exercise2.execute();
-//        Exercise3.execute();
-//        Exercise4.execute();
-//        Exercise5.execute();
-//        Exercise6.execute();
+        System.out.println("Exercício 1");
+        Exercise1.execute();
+
+        System.out.println("Exercício 2");
+        Exercise2.execute();
+
+        System.out.println("Exercício 3");
+        Exercise3.execute();
+
+        System.out.println("Exercício 4");
+        Exercise4.execute();
+
+        System.out.println("Exercício 5");
+        Exercise5.execute();
+
+        System.out.println("Exercício 6");
+        Exercise6.execute();
+
+        System.out.println("Exercício 7");
         Exercise7.execute();
+
+        System.out.println("Exercício 8");
+        Exercise8.execute();
     }
 }

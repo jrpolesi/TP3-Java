@@ -21,8 +21,6 @@ public class HttpClient {
     public static <T> APIResponse<T> get(String url, Map<String, String> queryParams, Class<T> responseBodyOf) throws IOException {
         if (Objects.nonNull(queryParams) && !queryParams.isEmpty()) {
             url = concatQueryParams(url, queryParams);
-
-            System.out.println("URL com query params: " + url);
         }
 
         final var connection = createConnection(url, "GET");
@@ -68,6 +66,27 @@ public class HttpClient {
         }
     }
 
+    public static <T> APIResponse<T> put(String url, Object body, Class<T> responseBodyOf) throws IOException {
+        final var connection = createConnection(url, "PUT");
+        connection.setDoOutput(true);
+
+        setBody(connection, body);
+
+        try {
+            final var response = readResponse(connection, responseBodyOf);
+
+            connection.disconnect();
+
+            return new APIResponse<T>(
+                    connection.getResponseCode(),
+                    response
+            );
+        } catch (IOException e) {
+            connection.disconnect();
+            throw e;
+        }
+    }
+
     private static HttpURLConnection createConnection(String url, String method) {
         try {
             final var urlObject = new URI(url).toURL();
@@ -84,9 +103,10 @@ public class HttpClient {
     }
 
     private static <T> T readResponse(HttpURLConnection connection, Class<T> responseBodyOf) throws IOException {
+        System.out.println("Request URL: " + connection.getRequestMethod() + " - " + connection.getURL());
+
         final var in = new BufferedReader(
                 new InputStreamReader(connection.getInputStream())
-
         );
         final var response = new StringBuilder();
 
@@ -119,6 +139,8 @@ public class HttpClient {
         }
 
         final var bodyJson = gson.toJson(body);
+
+        System.out.println("Request Body: " + bodyJson);
 
         final var outputStream = connection.getOutputStream();
         final var bodyBytes = bodyJson.getBytes(StandardCharsets.UTF_8);
