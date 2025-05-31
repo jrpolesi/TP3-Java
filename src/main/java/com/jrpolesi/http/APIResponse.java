@@ -1,19 +1,33 @@
 package com.jrpolesi.http;
 
-public class APIResponse {
+public class APIResponse<T> {
     private final int statusCode;
-    private final String body;
+    private final T body;
+    private final String errorMessage;
 
-    public APIResponse(int statusCode, String body) {
+    private APIResponse(int statusCode, T body, String errorMessage) {
         this.statusCode = statusCode;
         this.body = body;
+        this.errorMessage = errorMessage;
+    }
+
+    public APIResponse(int statusCode, T body) {
+        this(statusCode, body, null);
+    }
+
+    public APIResponse(int statusCode, String errorMessage) {
+        this(statusCode, null, errorMessage);
     }
 
     public int getStatusCode() {
         return statusCode;
     }
 
-    public String getBody() {
+    public T getBody() {
         return body;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
     }
 }

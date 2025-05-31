@@ -1,36 +1,38 @@
 package com.jrpolesi.http;
 
+import com.google.gson.Gson;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Objects;
 
 public class HttpClient {
-    public static APIResponse get(String url) throws IOException {
-        return get(url, null);
+    private static final Gson gson = new Gson();
+
+    public static <T> APIResponse<T> get(String url, Class<T> responseBodyOf) throws IOException {
+        return get(url, null, responseBodyOf);
     }
 
-    public static APIResponse get(String url, Map<String, String> queryParams) throws IOException {
+    public static <T> APIResponse<T> get(String url, Map<String, String> queryParams, Class<T> responseBodyOf) throws IOException {
         if (Objects.nonNull(queryParams) && !queryParams.isEmpty()) {
             url = concatQueryParams(url, queryParams);
 
             System.out.println("URL com query params: " + url);
         }
 
-        final var connection = createConnection(url);
-
-        connection.setRequestMethod("GET");
-        connection.setRequestProperty("Accept", "application/json");
+        final var connection = createConnection(url, "GET");
 
         try {
-            final var response = readResponse(connection);
+            final var response = readResponse(connection, responseBodyOf);
 
             connection.disconnect();
 
-            return new APIResponse(
+            return new APIResponse<T>(
                     connection.getResponseCode(),
                     response
             );
@@ -38,23 +40,50 @@ public class HttpClient {
             connection.disconnect();
 
             if (connection.getResponseCode() == HttpURLConnection.HTTP_NOT_FOUND) {
-                return new APIResponse(HttpURLConnection.HTTP_NOT_FOUND, "Not Found");
+                return new APIResponse<T>(HttpURLConnection.HTTP_NOT_FOUND, "Not Found");
             }
 
             throw e;
         }
     }
 
-    private static HttpURLConnection createConnection(String url) {
+    public static <T> APIResponse<T> post(String url, Object body, Class<T> responseBodyOf) throws IOException {
+        final var connection = createConnection(url, "POST");
+        connection.setDoOutput(true);
+
+        setBody(connection, body);
+
+        try {
+            final var response = readResponse(connection, responseBodyOf);
+
+            connection.disconnect();
+
+            return new APIResponse<T>(
+                    connection.getResponseCode(),
+                    response
+            );
+        } catch (IOException e) {
+            connection.disconnect();
+            throw e;
+        }
+    }
+
+    private static HttpURLConnection createConnection(String url, String method) {
         try {
             final var urlObject = new URI(url).toURL();
-            return (HttpURLConnection) urlObject.openConnection();
+            final var connection = (HttpURLConnection) urlObject.openConnection();
+
+            connection.setRequestMethod(method);
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestProperty("Accept", "application/json");
+
+            return connection;
         } catch (Exception e) {
             throw new RuntimeException("Erro ao criar conexão HTTP", e);
         }
     }
 
-    private static String readResponse(HttpURLConnection connection) throws IOException {
+    private static <T> T readResponse(HttpURLConnection connection, Class<T> responseBodyOf) throws IOException {
         final var in = new BufferedReader(
                 new InputStreamReader(connection.getInputStream())
 
@@ -67,7 +96,12 @@ public class HttpClient {
         }
 
         in.close();
-        return response.toString();
+
+        if (Objects.isNull(responseBodyOf)) {
+            return null;
+        } else {
+            return gson.fromJson(response.toString(), responseBodyOf);
+        }
     }
 
     private static String concatQueryParams(String url, Map<String, String> queryParams) {
@@ -77,5 +111,17 @@ public class HttpClient {
                 .orElse("");
 
         return url + "?" + params;
+    }
+
+    private static void setBody(HttpURLConnection connection, Object body) throws IOException {
+        if (Objects.isNull(body)) {
+            return;
+        }
+
+        final var bodyJson = gson.toJson(body);
+
+        final var outputStream = connection.getOutputStream();
+        final var bodyBytes = bodyJson.getBytes(StandardCharsets.UTF_8);
+        outputStream.write(bodyBytes);
     }
 }

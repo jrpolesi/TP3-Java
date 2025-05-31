@@ -1,6 +1,5 @@
 package com.jrpolesi.exercises.exercise4;
 
-import com.google.gson.Gson;
 import com.jrpolesi.http.HttpClient;
 
 import java.io.IOException;
@@ -9,7 +8,6 @@ import java.util.Map;
 
 public class Exercise4 {
     private static final String URL = "https://apichallenges.eviltester.com/sim/entities";
-    private static final Gson gson = new Gson();
 
     public static void execute() {
         try {
@@ -25,7 +23,7 @@ public class Exercise4 {
     }
 
     private static void getAndPrintEntity(Map<String, String> queryParams) throws IOException {
-        final var response = HttpClient.get(URL, queryParams);
+        final var response = HttpClient.get(URL, queryParams, EntitiesResponse.class);
 
         final var statusCode = response.getStatusCode();
         System.out.println("Status code: " + statusCode);
@@ -40,9 +38,7 @@ public class Exercise4 {
             return;
         }
 
-        final var body = response.getBody();
-
-        final var entitiesResponse = gson.fromJson(body, EntitiesResponse.class);
+        final var entitiesResponse = response.getBody();
 
         System.out.println("Entities:");
 

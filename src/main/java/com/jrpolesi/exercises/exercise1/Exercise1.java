@@ -1,6 +1,5 @@
 package com.jrpolesi.exercises.exercise1;
 
-import com.google.gson.Gson;
 import com.jrpolesi.http.HttpClient;
 
 public class Exercise1 {
@@ -8,7 +7,7 @@ public class Exercise1 {
         final var url = "https://apichallenges.eviltester.com/sim/entities";
 
         try {
-            final var response = HttpClient.get(url);
+            final var response = HttpClient.get(url, EntitiesResponse.class);
 
             final var statusCode = response.getStatusCode();
             System.out.println("Status code: " + statusCode);
@@ -18,10 +17,8 @@ public class Exercise1 {
                 return;
             }
 
-            final var body = response.getBody();
-
-            final var gson = new Gson();
-            final var entitiesResponse = gson.fromJson(body, EntitiesResponse.class);
+            final var entitiesResponse = response.getBody();
+            ;
 
             System.out.println("Entities:");
 
