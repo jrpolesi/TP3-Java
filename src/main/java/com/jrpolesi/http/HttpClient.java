@@ -37,8 +37,9 @@ public class HttpClient {
         } catch (IOException e) {
             connection.disconnect();
 
-            if (connection.getResponseCode() == HttpURLConnection.HTTP_NOT_FOUND) {
-                return new APIResponse<T>(HttpURLConnection.HTTP_NOT_FOUND, "Not Found");
+            final var errorResponse = handlerError(connection.getResponseCode());
+            if (Objects.nonNull(errorResponse)) {
+                return (APIResponse<T>) errorResponse;
             }
 
             throw e;
@@ -83,6 +84,34 @@ public class HttpClient {
             );
         } catch (IOException e) {
             connection.disconnect();
+            throw e;
+        }
+    }
+
+    public static APIResponse<Object> delete(String url) throws IOException {
+        return delete(url, null);
+    }
+
+    public static <T> APIResponse<T> delete(String url, Class<T> responseBodyOf) throws IOException {
+        final var connection = createConnection(url, "DELETE");
+
+        try {
+            final var response = readResponse(connection, responseBodyOf);
+
+            connection.disconnect();
+
+            return new APIResponse<T>(
+                    connection.getResponseCode(),
+                    response
+            );
+        } catch (IOException e) {
+            connection.disconnect();
+
+            final var errorResponse = handlerError(connection.getResponseCode());
+            if (Objects.nonNull(errorResponse)) {
+                return (APIResponse<T>) errorResponse;
+            }
+
             throw e;
         }
     }
@@ -145,5 +174,13 @@ public class HttpClient {
         final var outputStream = connection.getOutputStream();
         final var bodyBytes = bodyJson.getBytes(StandardCharsets.UTF_8);
         outputStream.write(bodyBytes);
+    }
+
+    private static <T> APIResponse<T> handlerError(int statusCode) {
+        if (statusCode == HttpURLConnection.HTTP_NOT_FOUND) {
+            return new APIResponse<T>(HttpURLConnection.HTTP_NOT_FOUND, "Entidade não encontrada");
+        }
+
+        return null;
     }
 }
