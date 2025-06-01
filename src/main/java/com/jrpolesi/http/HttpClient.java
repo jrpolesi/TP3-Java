@@ -3,6 +3,7 @@ package com.jrpolesi.http;
 import com.google.gson.Gson;
 
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -72,10 +73,11 @@ public class HttpClient {
 
     public static OptionsResponse options(String url) throws IOException {
         final var connection = createConnection(url, "OPTIONS");
-        connection.setDoOutput(true);
 
         final var allowMethods = connection.getHeaderField("Allow");
         final var statusCode = connection.getResponseCode();
+
+        System.out.println("Request URL: " + connection.getRequestMethod() + " - " + connection.getURL());
 
         connection.disconnect();
 
@@ -136,6 +138,7 @@ public class HttpClient {
                     null
             );
         } else {
+            System.out.println("Response Body: " + response.toString());
             final var body = gson.fromJson(response.toString(), responseBodyOf);
             return new APIResponse<T>(
                     statusCode,
@@ -199,7 +202,7 @@ public class HttpClient {
 
         System.out.println("Request Body: " + bodyJson);
 
-        final var outputStream = connection.getOutputStream();
+        final var outputStream = new DataOutputStream(connection.getOutputStream());
         final var bodyBytes = bodyJson.getBytes(StandardCharsets.UTF_8);
         outputStream.write(bodyBytes);
     }
