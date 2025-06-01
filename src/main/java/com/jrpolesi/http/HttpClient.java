@@ -70,6 +70,21 @@ public class HttpClient {
         return response;
     }
 
+    public static OptionsResponse options(String url) throws IOException {
+        final var connection = createConnection(url, "OPTIONS");
+        connection.setDoOutput(true);
+
+        final var allowMethods = connection.getHeaderField("Allow");
+        final var statusCode = connection.getResponseCode();
+
+        connection.disconnect();
+
+        return new OptionsResponse(
+                statusCode,
+                allowMethods
+        );
+    }
+
     private static HttpURLConnection createConnection(String url, String method) {
         try {
             final var urlObject = new URI(url).toURL();
