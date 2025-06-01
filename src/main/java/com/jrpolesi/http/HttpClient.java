@@ -24,26 +24,11 @@ public class HttpClient {
         }
 
         final var connection = createConnection(url, "GET");
+        final var response = readResponse(connection, responseBodyOf);
 
-        try {
-            final var response = readResponse(connection, responseBodyOf);
+        connection.disconnect();
 
-            connection.disconnect();
-
-            return new APIResponse<T>(
-                    connection.getResponseCode(),
-                    response
-            );
-        } catch (IOException e) {
-            connection.disconnect();
-
-            final var errorResponse = handlerError(connection.getResponseCode());
-            if (Objects.nonNull(errorResponse)) {
-                return (APIResponse<T>) errorResponse;
-            }
-
-            throw e;
-        }
+        return response;
     }
 
     public static <T> APIResponse<T> post(String url, Object body, Class<T> responseBodyOf) throws IOException {
@@ -52,19 +37,11 @@ public class HttpClient {
 
         setBody(connection, body);
 
-        try {
-            final var response = readResponse(connection, responseBodyOf);
+        final var response = readResponse(connection, responseBodyOf);
 
-            connection.disconnect();
+        connection.disconnect();
 
-            return new APIResponse<T>(
-                    connection.getResponseCode(),
-                    response
-            );
-        } catch (IOException e) {
-            connection.disconnect();
-            throw e;
-        }
+        return response;
     }
 
     public static <T> APIResponse<T> put(String url, Object body, Class<T> responseBodyOf) throws IOException {
@@ -73,19 +50,11 @@ public class HttpClient {
 
         setBody(connection, body);
 
-        try {
-            final var response = readResponse(connection, responseBodyOf);
+        final var response = readResponse(connection, responseBodyOf);
 
-            connection.disconnect();
+        connection.disconnect();
 
-            return new APIResponse<T>(
-                    connection.getResponseCode(),
-                    response
-            );
-        } catch (IOException e) {
-            connection.disconnect();
-            throw e;
-        }
+        return response;
     }
 
     public static APIResponse<Object> delete(String url) throws IOException {
@@ -94,26 +63,11 @@ public class HttpClient {
 
     public static <T> APIResponse<T> delete(String url, Class<T> responseBodyOf) throws IOException {
         final var connection = createConnection(url, "DELETE");
+        final var response = readResponse(connection, responseBodyOf);
 
-        try {
-            final var response = readResponse(connection, responseBodyOf);
+        connection.disconnect();
 
-            connection.disconnect();
-
-            return new APIResponse<T>(
-                    connection.getResponseCode(),
-                    response
-            );
-        } catch (IOException e) {
-            connection.disconnect();
-
-            final var errorResponse = handlerError(connection.getResponseCode());
-            if (Objects.nonNull(errorResponse)) {
-                return (APIResponse<T>) errorResponse;
-            }
-
-            throw e;
-        }
+        return response;
     }
 
     private static HttpURLConnection createConnection(String url, String method) {
@@ -131,12 +85,25 @@ public class HttpClient {
         }
     }
 
-    private static <T> T readResponse(HttpURLConnection connection, Class<T> responseBodyOf) throws IOException {
+    private static <T> APIResponse<T> readResponse(HttpURLConnection connection, Class<T> responseBodyOf) throws IOException {
         System.out.println("Request URL: " + connection.getRequestMethod() + " - " + connection.getURL());
 
+        final var statusCode = connection.getResponseCode();
+
+        if (statusCode > 199 && statusCode < 300) {
+            return readSuccessResponse(connection, responseBodyOf);
+        }
+
+        return readErrorResponse(connection);
+    }
+
+    private static <T> APIResponse<T> readSuccessResponse(HttpURLConnection connection, Class<T> responseBodyOf) throws IOException {
+        final var inputStream = connection.getInputStream();
+
         final var in = new BufferedReader(
-                new InputStreamReader(connection.getInputStream())
+                new InputStreamReader(inputStream)
         );
+
         final var response = new StringBuilder();
 
         String inputLine;
@@ -146,10 +113,56 @@ public class HttpClient {
 
         in.close();
 
-        if (Objects.isNull(responseBodyOf)) {
-            return null;
+        final var statusCode = connection.getResponseCode();
+
+        if (response.toString().isEmpty()) {
+            return new APIResponse<>(
+                    statusCode,
+                    null
+            );
         } else {
-            return gson.fromJson(response.toString(), responseBodyOf);
+            final var body = gson.fromJson(response.toString(), responseBodyOf);
+            return new APIResponse<T>(
+                    statusCode,
+                    body
+            );
+        }
+    }
+
+    private static <T> APIResponse<T> readErrorResponse(HttpURLConnection connection) throws IOException {
+        final var inputStream = connection.getErrorStream();
+
+        final var in = new BufferedReader(
+                new InputStreamReader(inputStream)
+        );
+
+        final var response = new StringBuilder();
+
+        String inputLine;
+        while ((inputLine = in.readLine()) != null) {
+            response.append(inputLine);
+        }
+
+        in.close();
+
+        final var statusCode = connection.getResponseCode();
+
+        if (response.toString().isEmpty()) {
+            return new APIResponse<>(
+                    statusCode,
+                    null
+            );
+        } else {
+            final var body = gson.fromJson(response.toString(), ErrorResponse.class);
+
+            final var errorMessage = body.errorMessages().stream().reduce(
+                    (a, b) -> a + "; " + b
+            ).orElse("Erro desconhecido.") + ".";
+
+            return new APIResponse<>(
+                    statusCode,
+                    errorMessage
+            );
         }
     }
 
@@ -174,13 +187,5 @@ public class HttpClient {
         final var outputStream = connection.getOutputStream();
         final var bodyBytes = bodyJson.getBytes(StandardCharsets.UTF_8);
         outputStream.write(bodyBytes);
-    }
-
-    private static <T> APIResponse<T> handlerError(int statusCode) {
-        if (statusCode == HttpURLConnection.HTTP_NOT_FOUND) {
-            return new APIResponse<T>(HttpURLConnection.HTTP_NOT_FOUND, "Entidade não encontrada");
-        }
-
-        return null;
     }
 }
